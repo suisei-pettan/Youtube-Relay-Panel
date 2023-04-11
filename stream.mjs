@@ -25,7 +25,7 @@ io.on("connection", (socket) => {
         socket.emit('broadcasted', '此直播已转播');
       } else {
         //const command = `python3 /www/streambackend.py ${data.url} ${data.stream_link}`;
-        exec('python3 /www/streambackend.py ' + data.url + ' ' + data.stream_link);
+        exec('python3 /www/streambackend.py ' + data.url + ' ' +'"'+ data.stream_link+'"');
         // execute command
       } 
     }
