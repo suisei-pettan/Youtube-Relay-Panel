@@ -15,6 +15,17 @@ const io = new Server(httpServer, { /* options */
 });
 
 io.on("connection", (socket) => {
+  socket.on("danmaku", (arg) => {
+    var pattern = /.*(吹雪|笨蛋).*/;
+    var danma = JSON.parse(arg);
+    if(pattern.test(danma.text)){
+	console.log(pattern.test(danma.text));
+    }else{
+	console.log(danma.text);
+    var channel=danma.ch;
+    io.emit("danmaku"+channel, arg);
+    }
+  });
   socket.on('pushurl', (data) => {
     if (!data.url.includes('share')) {
       socket.emit('not-standard-link', '请使用YouTube分享链接');
@@ -25,6 +36,7 @@ io.on("connection", (socket) => {
         socket.emit('broadcasted', '此直播已转播');
       } else {
         //const command = `python3 /www/streambackend.py ${data.url} ${data.stream_link}`;
+        console.log('python3 /www/streambackend.py ' + data.url + ' ' +'"'+ data.stream_link+'"');
         exec('python3 /www/streambackend.py ' + data.url + ' ' +'"'+ data.stream_link+'"');
         // execute command
       } 
