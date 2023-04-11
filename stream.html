@@ -10,7 +10,7 @@
       font-family: Arial, Helvetica, sans-serif;
     }
 
-    input[type=text] {
+    select {
       width: 100%;
       padding: 12px 20px;
       margin: 8px 0;
@@ -38,7 +38,9 @@
 <body>
   <div style="width:30%;margin:auto;">
     <h2 style="text-align:center;">转播面板</h2>
-    <input type="text" id="url" placeholder="YouTube分享链接（必须从分享功能中获得）"><br><br>
+    <select id="url">
+      <option value="">选择你要观看的直播</option>
+    </select><br><br>
     <input type="text" id="stream_link" placeholder="推流地址（QQ是 推流地址/密钥）"><br><br>
     <input type="text" id="backend_url" placeholder="后端地址"><br><br>
     <button onclick="connect()">开始转播</button>
@@ -46,22 +48,47 @@
 
   <script>
     function connect() {
-      const url = document.getElementById('backend_url').value;
-      const socket = io(url);
-      const urlValue = document.getElementById('url').value;
-      const streamLinkValue = document.getElementById('stream_link').value;
-      socket.emit('pushurl', { url: urlValue, stream_link: streamLinkValue });
-      setTimeout(() => {
-        socket.disconnect();
-      }, 10000);
-      socket.on('not-standard-link', (data) => {
-        alert(data);
-        socket.disconnect();
-      });
-      socket.on('broadcasted', (data) => {
-        alert(data);
-        socket.disconnect();
-      });
+      const apiKey = "https://holodex.net/api/v2/live?org=Hololive&status=live";
+      fetch(apiKey)
+        .then((response) => response.json())
+        .then((data) => {
+          const selectElm = document.getElementById("url");
+          const broadcasts = [];
+          data.forEach((live) => {
+            const nameAndTitle = `${live.channel.english_name}|${live.title}`;
+            broadcasts.push({
+              nameAndTitle,
+              id: live.id,
+            });
+            const option = document.createElement("option");
+            option.value = live.id;
+            option.text = nameAndTitle;
+            selectElm.appendChild(option);
+          });
+
+          selectElm.addEventListener("change", (e) => {
+            const selectedId = e.target.value;
+            const selectedBroadcast = broadcasts.find((b) => b.id === selectedId);
+            const urlValue = `https://www.youtube.com/live/${selectedBroadcast.id}`;
+            const socket = io(document.getElementById("backend_url").value);
+            socket.emit("pushurl", {
+              url: urlValue,
+              stream_link: document.getElementById("stream_link").value,
+            });
+            setTimeout(() => {
+              socket.disconnect();
+            }, 10000);
+            socket.on("not-standard-link", (data) => {
+              alert(data);
+              socket.disconnect();
+            });
+            socket.on("broadcasted", (data) => {
+              alert(data);
+              socket.disconnect();
+            });
+          });
+        })
+        .catch((error) => console.log(error));
     }
   </script>
 </body>
