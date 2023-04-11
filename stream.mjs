@@ -27,7 +27,7 @@ io.on("connection", (socket) => {
     }
   });
   socket.on('pushurl', (data) => {
-    if (!data.url.includes('share')) {
+    if (!data.url.includes('you')) {
       socket.emit('not-standard-link', '请使用YouTube分享链接');
     } else {
       console.log(readFileSync('/www/urls.txt', 'utf8'));
