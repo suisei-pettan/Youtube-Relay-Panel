@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Socket.IO Client</title>
+  <script src="https://cdn.socket.io/4.3.2/socket.io.min.js"></script>
+</head>
+<body>
+  <input type="text" id="url" placeholder="URL"><br><br>
+  <input type="text" id="stream_link" placeholder="Stream Link"><br><br>
+  <input type="text" id="backend_url" placeholder="Backend URL"><br><br>
+  <button onclick="connect()">Connect</button>
+
+  <script>
+    function connect() {
+      const url = document.getElementById('backend_url').value;
+      const socket = io(url);
+      const urlValue = document.getElementById('url').value;
+      const streamLinkValue = document.getElementById('stream_link').value;
+      socket.emit('pushurl', { url: urlValue, stream_link: streamLinkValue });
+      setTimeout(() => {
+        socket.disconnect();
+      }, 10000);
+      socket.on('invalid_url', (data) => {
+        alert(data);
+        socket.disconnect();
+      });
+      socket.on('broadcasted', (data) => {
+        alert(data);
+        socket.disconnect();
+      });
+    }
+  </script>
+</body>
+</html>
