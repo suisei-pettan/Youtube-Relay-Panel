@@ -47,7 +47,7 @@
   </div>
 
   <script>
-    function connect() {
+    function fetchLiveStreams() {
       const apiKey = "https://holodex.net/api/v2/live?org=Hololive&status=live";
       fetch(apiKey)
         .then((response) => response.json())
@@ -89,6 +89,34 @@
           });
         })
         .catch((error) => console.log(error));
+    }
+
+    window.onload = function () {
+      fetchLiveStreams();
+    };
+
+    function connect() {
+      const urlValue = document.getElementById("url").value;
+      if (!urlValue) {
+        alert("请选择要观看的直播！");
+        return;
+      }
+      const socket = io(document.getElementById("backend_url").value);
+      socket.emit("pushurl", {
+        url: `https://www.youtube.com/live/${urlValue}`,
+        stream_link: document.getElementById("stream_link").value,
+      });
+      setTimeout(() => {
+        socket.disconnect();
+      }, 10000);
+      socket.on("not-standard-link", (data) => {
+        alert(data);
+        socket.disconnect();
+      });
+      socket.on("broadcasted", (data) => {
+        alert(data);
+        socket.disconnect();
+      });
     }
   </script>
 </body>
