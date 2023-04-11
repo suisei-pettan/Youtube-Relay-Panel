@@ -4,12 +4,45 @@
   <meta charset="UTF-8">
   <title>Socket.IO Client</title>
   <script src="https://cdn.socket.io/4.3.2/socket.io.min.js"></script>
+  <style>
+    body {
+      background-color: #f2f2f2;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    input[type=text] {
+      width: 100%;
+      padding: 12px 20px;
+      margin: 8px 0;
+      display: inline-block;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+
+    button {
+      background-color: #4285f4;
+      color: white;
+      padding: 14px 20px;
+      margin: 8px 0;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #357ae8;
+    }
+  </style>
 </head>
 <body>
-  <input type="text" id="url" placeholder="URL"><br><br>
-  <input type="text" id="stream_link" placeholder="Stream Link"><br><br>
-  <input type="text" id="backend_url" placeholder="Backend URL"><br><br>
-  <button onclick="connect()">Connect</button>
+  <div style="width:30%;margin:auto;">
+    <h2 style="text-align:center;">Socket.IO Client</h2>
+    <input type="text" id="url" placeholder="URL"><br><br>
+    <input type="text" id="stream_link" placeholder="Stream Link"><br><br>
+    <input type="text" id="backend_url" placeholder="Backend URL"><br><br>
+    <button onclick="connect()">Connect</button>
+  </div>
 
   <script>
     function connect() {
