@@ -54,7 +54,7 @@
       setTimeout(() => {
         socket.disconnect();
       }, 10000);
-      socket.on('invalid_url', (data) => {
+      socket.on('not-standard-link', (data) => {
         alert(data);
         socket.disconnect();
       });
