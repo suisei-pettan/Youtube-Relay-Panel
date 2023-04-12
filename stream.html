@@ -131,25 +131,21 @@
         url: `https://www.youtube.com/live/${urlValue}`,
         stream_link: document.getElementById("stream_link").value,
       });
-      setTimeout(() => {
-        socket.disconnect();
-      }, 10000);
       socket.on("not-standard-link", (data) => {
         alert(data);
-        socket.disconnect();
       });
       socket.on("broadcasted", (data) => {
         alert(data);
-        socket.disconnect();
       });
     }
     function closePush() {
   const streamLink = document.getElementById("stream_link").value; // 将将检查给定的流链接以关闭推送
-  socket.emit('closepush', { stream_link: streamLink });
+  alert(streamLink);
+  socket.emit('close-stream', { stream_link: streamLink });
 }
 
 // 添加推流关闭回调，更新页面提示信息
-socket.on('close-stream', (message) => {
+socket.on('push-closed', (message) => {
   console.log(message);
   // 在页面上添加提示信息
 });
