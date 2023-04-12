@@ -149,7 +149,7 @@
 }
 
 // 添加推流关闭回调，更新页面提示信息
-socket.on('push-closed', (message) => {
+socket.on('close-stream', (message) => {
   console.log(message);
   // 在页面上添加提示信息
 });
