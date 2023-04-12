@@ -68,6 +68,7 @@
     <input type="text" id="stream_link" placeholder="推流地址（QQ是 推流地址/密钥）"><br><br>
     <input type="text" id="backend_url" placeholder="后端地址"><br><br>
     <button onclick="connect()">开始转播</button>
+    <button id="closePushButton" onclick="closePush()">关闭推流</button>
   </div>
 
   <script>
@@ -142,6 +143,21 @@
         socket.disconnect();
       });
     }
+    function closePush() {
+  const streamLink = document.getElementById("stream_link").value; // 将将检查给定的流链接以关闭推送
+  socket.emit('closepush', { stream_link: streamLink });
+}
+
+// 添加推流关闭回调，更新页面提示信息
+socket.on('push-closed', (message) => {
+  console.log(message);
+  // 在页面上添加提示信息
+});
+
+socket.on('push-not-started', (message) => {
+  console.log(message);
+  // 在页面上添加提示信息
+});
   </script>
 </body>
 </html>
