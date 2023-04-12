@@ -2,6 +2,7 @@ import subprocess
 import sys
 import os
 import time
+import json
 
 def main():
     # 获取启动参数
@@ -21,6 +22,12 @@ def main():
         ffmpeg_command = f'ffmpeg -loglevel info -i {source_live} -c:v copy -c:a aac -b:a 600k -ar 44100 reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 10 -strict -2 -f flv \"{channel_number}\"';
         p = subprocess.Popen(ffmpeg_command, shell=True)
 
+        # 将 channel_number 和进程的pid作为二维数组的两个值存入 /www/pid.txt
+        pid_arr = [[channel_number, p.pid]]
+        with open('/www/pid.txt', 'a') as pid_file:
+            json.dump(pid_arr, pid_file)
+            pid_file.write('\n')
+
         # 等待5.5小时后停止进程
         time.sleep(19800)
         p.terminate()
@@ -35,7 +42,6 @@ def main():
                     file.write(url)
 
     return
-
 
 if __name__ == "__main__":
     main()

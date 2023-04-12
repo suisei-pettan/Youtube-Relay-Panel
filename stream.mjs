@@ -1,68 +1,75 @@
-import { readFileSync } from "fs";
+import { readFileSync, writeFileSync } from "fs";
 import { createServer } from "https";
 import { Server } from "socket.io";
-import { exec } from 'child_process';
+import { exec } from "child_process";
 
 const httpServer = createServer({
   key: readFileSync("/www/server/panel/ssl/privateKey.pem"),
-  cert: readFileSync("/www/server/panel/ssl/certificate.pem")
+  cert: readFileSync("/www/server/panel/ssl/certificate.pem"),
 });
 
-const io = new Server(httpServer, { /* options */
+const io = new Server(httpServer, {
+  /* options */
   cors: {
-    origin: "https://btiowaifu.github.io"
-  }
+    origin: "https://btiowaifu.github.io",
+  },
 });
+
+let pidList = [];
 
 io.on("connection", (socket) => {
+  socket.on("disconnect", () => {
+    console.log("User disconnected");
+  });
   socket.on("danmaku", (arg) => {
     var pattern = /.*(吹雪|笨蛋).*/;
     var danma = JSON.parse(arg);
-    if(pattern.test(danma.text)){
+    if (pattern.test(danma.text)) {
       console.log(pattern.test(danma.text));
-    }else{
+    } else {
       console.log(danma.text);
-      var channel=danma.ch;
-      io.emit("danmaku"+channel, arg);
+      var channel = danma.ch;
+      io.emit("danmaku" + channel, arg);
     }
   });
-  socket.on('pushurl', (data) => {
-    if (!data.url.includes('you')) {
-      socket.emit('not-standard-link', '请使用YouTube分享链接');
+  socket.on("pushurl", (data) => {
+    if (!data.url.includes("you")) {
+      socket.emit("not-standard-link", "请使用YouTube分享链接");
     } else {
-      console.log(readFileSync('/www/urls.txt', 'utf8'));
-      const urls = readFileSync('/www/urls.txt', 'utf8');
+      console.log(readFileSync("/www/urls.txt", "utf8"));
+      const urls = readFileSync("/www/urls.txt", "utf8");
       if (urls.includes(data.url)) {
-        socket.emit('broadcasted', '此直播已转播');
+        socket.emit("broadcasted", "此直播已转播");
       } else {
-        //const command = `python3 /www/streambackend.py ${data.url} ${data.stream_link}`;
         console.log('python3 /www/streambackend.py ' + data.url + ' ' +'"'+ data.stream_link+'"');
-        exec('python3 /www/streambackend.py ' + data.url + ' ' +'"'+ data.stream_link+'"');
-
-        // 添加关闭推流监听
-        socket.on('closepush', (close_data) => {
-          const stream_link_pid = readFileSync('/www/pid.txt', 'utf8');
-          const stream_link_pid_array = stream_link_pid.trim().split('\n').map(item => item.trim().split(','));
-          const pid_to_kill = stream_link_pid_array.find(item => item[0] === close_data.stream_link);
-
-          if (pid_to_kill) {
-            const pid = pid_to_kill[1];
-            exec(`kill ${pid}`, (error, stdout, stderr) => {
-              if (error) {
-                console.error(`exec error: ${error}`);
-                return;
-              }
-              console.log(`stdout: ${stdout}`);
-              console.error(`stderr: ${stderr}`);
-            });
-
-            socket.emit('push-closed', '推流已关闭');
-          } else {
-            socket.emit('push-not-started', '该链接的推流未开启');
+        exec('python3 /www/streambackend.py ' + data.url + ' ' +'"'+ data.stream_link+'"', (error, stdout, stderr) => {
+          if (error) {
+            console.log(`error: ${error.message}`);
+            return;
           }
+          if (stderr) {
+            console.log(`stderr: ${stderr}`);
+            return;
+          }
+          console.log(`stdout: ${stdout}`);
         });
-      } 
+      }
     }
+  });
+  socket.on("close-stream", (value) => { // 监听 "close-stream" 事件
+    const pidTxt = readFileSync("/www/pid.txt", "utf8").trim();
+    for(var i =0;i<=pidTxt.length;i++){
+        if(pidTxt[i][0]==value.stream_link){
+            exec('kill -9 ' + pidTxt[i][1]);
+            pidTxt.splice(i,1);
+            fs.writeFile('/www/pid.txt', pidTxt);
+        }else{
+            console.log("无目标")
+        }
+    }
+    console.log(`killing process ${pidToKill}`);
+    
   });
 });
+
 httpServer.listen(2083);
