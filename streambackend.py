@@ -18,7 +18,7 @@ def main():
         source_live = ytdl_patched_output.decode().strip()
 
         # 执行 ffmpeg
-        ffmpeg_command = f'ffmpeg -loglevel info -i {source_live} -c:v copy -c:a aac -b:a 600k -ar 44100 -strict -2 -f flv \"{channel_number}\"';
+        ffmpeg_command = f'ffmpeg -loglevel info -i {source_live} -c:v copy -c:a aac -b:a 600k -ar 44100 reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 10 -strict -2 -f flv \"{channel_number}\"';
         p = subprocess.Popen(ffmpeg_command, shell=True)
 
         # 等待5.5小时后停止进程
