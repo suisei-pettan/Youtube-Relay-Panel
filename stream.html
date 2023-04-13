@@ -141,7 +141,7 @@
     function closePush() {
   const streamLink = document.getElementById("stream_link").value; // 将将检查给定的流链接以关闭推送
   //alert(streamLink);
-  socket.emit("close-stream", { stream_link: streamLink });
+  socket.emit("close-stream", { stream_link: document.getElementById("stream_link").value });
 }
 
 // 添加推流关闭回调，更新页面提示信息
