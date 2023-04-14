@@ -141,8 +141,9 @@
     function closePush() {
       const socket = io(document.getElementById("backend_url").value);
       const streamLink = document.getElementById("stream_link").value; // 将将检查给定的流链接以关闭推送
+      const urlValue = document.getElementById("url").value;
   //alert(streamLink);
-      socket.emit('close-stream', { stream_link: document.getElementById("stream_link").url: `https://www.youtube.com/live/${urlValue}`, });
+      socket.emit('close-stream', { stream_link: document.getElementById("stream_link").url: `https://www.youtube.com/live/${urlValue}`});
 }
 
 // 添加推流关闭回调，更新页面提示信息
