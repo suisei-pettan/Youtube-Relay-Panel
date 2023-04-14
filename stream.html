@@ -61,7 +61,7 @@
 </head>
 <body>
   <div style="width:30%;margin:auto;">
-    <h2 style="text-align:center;">bug中混入了少量代码，正在维护</h2>
+    <h2 style="text-align:center;">转播面板</h2>
     <select id="url">
       <option value="">选择你要观看的直播</option>
     </select><br><br>
@@ -140,12 +140,10 @@
     }
     function closePush() {
       const socket = io(document.getElementById("backend_url").value);
-      const urlValue = document.getElementById("url").value;
-  const streamLink = document.getElementById("stream_link").value; // 将将检查给定的流链接以关闭推送
+      const streamLink = document.getElementById("stream_link").value; // 将将检查给定的流链接以关闭推送
   //alert(streamLink);
-  socket.emit("close-stream", { stream_link: document.getElementById("stream_link").value, youtube_link: `https://www.youtube.com/live/${urlValue}`});
-      alert(`https://www.youtube.com/live/${urlValue}`);
-    }
+      socket.emit('close-stream', { stream_link: document.getElementById("stream_link").value,url: `https://www.youtube.com/live/${urlValue}`});
+}
 
 // 添加推流关闭回调，更新页面提示信息
 socket.on('push-closed', (message) => {
