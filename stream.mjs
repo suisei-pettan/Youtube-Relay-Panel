@@ -5,7 +5,6 @@ import { exec, spawn,fork } from "child_process";
 
 global.pid=[];
 
-global.urls=[];
 
 const httpServer = createServer({
   key: readFileSync("/www/server/panel/ssl/privateKey.pem"),
@@ -22,6 +21,7 @@ const io = new Server(httpServer, {
 let pidList = [];
 
 io.on("connection", (socket) => {
+  global.urls=[];
   socket.on("disconnect", () => {
     console.log("User disconnected");
   });
@@ -44,7 +44,10 @@ io.on("connection", (socket) => {
         socket.emit("broadcasted", "此直播已转播");
       } else {
         global.urls.push(data.url);
-        const process = spawn("python3 /www/streambackend.py", [data.url, data.stream_link]);
+        const args = [data.url, data.stream_link];
+
+const process = spawn('python3', ['/www/streambackend.py', ...args],{ detached: true });
+
 
         // 获取进程的 PID
         const pid = process.pid;
@@ -71,13 +74,18 @@ socket.on("close-stream", (value) => {
   if (index !== -1) {
     // 从 global.pid 数组中获取当前行的 pid，并使用 kill -TERM 命令杀死进程
     const pidToKill = global.pid[index][1];
-    exec(`kill -TERM -- -${pidToKill}`, (error, stdout, stderr) => {
+    exec(`kill -kill -- -${pidToKill}`, (error, stdout, stderr) => {
       if (error) {
         console.log(`kill process error: ${error.message}`);
         return;
       }
       if (stderr) {
         console.log(`kill process stderr: ${stderr}`);
+        if (urlIndex !== -1) {
+    // 从 global.urls 数组中删除当前项
+    global.urls.splice(urlIndex, 1);
+    console.log(`item with url ${value.url} removed from urls`);
+  }
         return;
       }
       console.log(`process ${pidToKill} killed`);
@@ -90,12 +98,6 @@ socket.on("close-stream", (value) => {
 
   // 查找在 global.urls 数组中与 value.url 相同的项，并获得该项在数组中的索引
   const urlIndex = global.urls.findIndex((url) => url === value.url);
-
-  if (urlIndex !== -1) {
-    // 从 global.urls 数组中删除当前项
-    global.urls.splice(urlIndex, 1);
-    console.log(`item with url ${value.url} removed from urls`);
-  }
 });
 
 
