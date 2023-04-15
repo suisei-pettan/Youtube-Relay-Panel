@@ -1,7 +1,9 @@
 import { readFileSync, writeFileSync } from "fs";
 import { createServer } from "https";
 import { Server } from "socket.io";
-import { exec } from "child_process";
+import { exec, spawn,fork } from "child_process";
+
+global.pid=[];
 
 global.urls=[];
 
@@ -42,81 +44,58 @@ io.on("connection", (socket) => {
         socket.emit("broadcasted", "此直播已转播");
       } else {
         global.urls.push(data.url);
-        console.log('python3 /www/streambackend.py ' + data.url + ' ' +'"'+ data.stream_link+'"');
-        exec('python3 /www/streambackend.py ' + data.url + ' ' +'"'+ data.stream_link+'"', (error, stdout, stderr) => {
-        if (error) {
-            console.log(`error: ${error.message}`);
-            return;
-        }
-        if (stderr) {
-            console.log(`stderr: ${stderr}`);
-            return;
-        }
+        const process = spawn("python3 /www/streambackend.py", [data.url, data.stream_link]);
 
-  // 获取Python进程PID和进程p的PID
-        const [python_pid, p_pid] = stdout.trim().split('\n')[0].split(' ');
+        // 获取进程的 PID
+        const pid = process.pid;
+        console.log(`The pid of the process is ${pid}.`);
 
-        console.log(`Python进程PID: ${python_pid}`);
-        console.log(`进程p的PID: ${p_pid}`);
-        if (!global.arr) {
-  global.arr = [[python_pid, p_pid, data.stream_link]];
-} else {
-  global.arr.push([python_pid, p_pid, data.stream_link]);
-}
+        // 将进程 PID 添加到 global.pid 数组的第一列和第二列
+        global.pid.push([data.stream_link, pid]);
 
-console.log(global.arr);
-
-
-  // 在这里可以将PID存储到二维数组的第一第二列中，具体方式取决于您的代码逻辑
+        // 当进程退出时更新 global.pid 数组，删除原来存在的 PID 行
+        process.on('exit', (code) => {
+          const index = global.pid.findIndex((item) => item[0] === data.stream_link);
+          if (index !== -1) {
+            global.pid.splice(index, 1);
+          }
         });
-
       }
     }
   });
-  socket.on("close-stream", (value) => { // 监听 "close-stream" 事件
-  if (global.arr) {
-  const pidIndex = 1;
-  const streamLinkIndex = 2;
 
-  for (let i = global.arr.length - 1; i >= 0; i--) {
-    const row = global.arr[i];
-    if (row[streamLinkIndex] === value.stream_link) {
-      // 找到包含 value.stream_link 的行，杀死其前两列中的PID
-      const pythonPid = row[0];
-      const pPid = row[pidIndex];
-      exec(`kill -9 ${pythonPid} ${pPid}`, (error, stdout, stderr) => {
-        if (error) {
-          console.log(`error: ${error.message}`);
-          return;
-        }
-        if (stderr) {
-          console.log(`stderr: ${stderr}`);
-          return;
-        }
-        console.log(`stdout: ${stdout}`);
+socket.on("close-stream", (value) => {
+  // 查找在 global.pid 数组中与 value.stream_link 相同的行，并获得该行在数组中的索引
+  const index = global.pid.findIndex((item) => item[0] === value.stream_link);
 
-        // 从数组中删除这一行
-        global.arr.splice(i, 1);
-      });
-    }
-  }
-
-  console.log(global.arr);
-} else {
-  console.log('global.arr is undefined or null');
-}
-if (global.urls) {
-  const index = global.urls.indexOf(value.url);
   if (index !== -1) {
-    global.urls.splice(index, 1);
-    console.log(`已删除${value.url}`);
-  } else {
-    console.log(`${value.url}在global.urls中不存在`);
-  }
-} else {
-  console.log(`global.urls不存在或为null`);
-}
+    // 从 global.pid 数组中获取当前行的 pid，并使用 kill -TERM 命令杀死进程
+    const pidToKill = global.pid[index][1];
+    exec(`kill -TERM -- -${pidToKill}`, (error, stdout, stderr) => {
+      if (error) {
+        console.log(`kill process error: ${error.message}`);
+        return;
+      }
+      if (stderr) {
+        console.log(`kill process stderr: ${stderr}`);
+        return;
+      }
+      console.log(`process ${pidToKill} killed`);
+    });
 
+    // 从 global.pid 数组中删除当前行
+    global.pid.splice(index, 1);
+    console.log(`row with stream_link ${value.stream_link} removed from pid`);
+  }
+
+  // 查找在 global.urls 数组中与 value.url 相同的项，并获得该项在数组中的索引
+  const urlIndex = global.urls.findIndex((url) => url === value.url);
+
+  if (urlIndex !== -1) {
+    // 从 global.urls 数组中删除当前项
+    global.urls.splice(urlIndex, 1);
+    console.log(`item with url ${value.url} removed from urls`);
+  }
 });
 
 
