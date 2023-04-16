@@ -4,7 +4,6 @@ cd /www/wwwroot
 
 # 更新仅仅update源
 apt update -y
-apt upgrade -y
 
 # 安装 nodejs 和 npm
 apt install -y nodejs npm
