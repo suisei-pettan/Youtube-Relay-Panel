@@ -40,4 +40,4 @@ read -n 1 -s
 cd /www/wwwroot
 
 # 启动 stream.mjs
-sudo nohup nodejs stream.mjs &
+sudo nodejs stream.mjs &
