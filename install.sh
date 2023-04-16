@@ -9,7 +9,8 @@ apt update -y
 apt install -y nodejs npm
 
 # 安装mjs代码中涉及的npm模块
-npm install -g fs https socket.io child_process
+npm install -g fs child_process
+npm install socket.io
 
 # 下载文件 stream.mjs 到 /www/wwwroot
 curl -O https://raw.githubusercontent.com/BTIOWaifu/Youtube-Relay-Panel/main/stream.mjs
@@ -39,4 +40,4 @@ read -n 1 -s
 cd /www/wwwroot
 
 # 启动 stream.mjs
-sudo nodejs stream.mjs &
+sudo nohup nodejs stream.mjs &
