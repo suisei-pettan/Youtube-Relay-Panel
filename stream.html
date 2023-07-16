@@ -72,12 +72,38 @@
 </div>
 
 <script>
+    const expiryDate = new Date();
+    expiryDate.setTime(expiryDate.getTime() + 24 * 60 * 60 * 1000);
+    function setCookie(name, value, expirationHours) {
+        const expirationDate = new Date();
+        expirationDate.setTime(expirationDate.getTime() + expirationHours * 60 * 60 * 1000);
+        const expires = "expires=" + expirationDate.toUTCString();
+        document.cookie = name + "=" + value + ";" + expires + ";path=/";
+    }
+
+    function getCookie(name) {
+        const cookieValue = document.cookie.match("(^|;)\\s*" + name + "\\s*=\\s*([^;]+)");
+        return cookieValue ? cookieValue.pop() : "";
+    }
+
+    const cookieName = "holodexApiKey"; // 设置自定义的 Cookie 名称
+    const storedApiKey = getCookie(cookieName);
+
+    if (storedApiKey) {
+        console.log("从 Cookie 中读取的 API 密钥是:", storedApiKey);
+    } else {
+        const userInput = prompt("请输入 Holodex API 密钥:");
+        setCookie(cookieName, userInput, 24);
+        console.log("API 密钥已存储在 Cookie 中，并设置有效期为 24 小时。");
+    }
+
+
+
     function fetchLiveStreams() {
         const apiKey = "https://holodex.net/api/v2/live?org=Hololive&status=live";
-        const holodex_apiKey = prompt("请输入 Holodex API 密钥:");
         fetch(apiKey, {
             headers: {
-                "X-APIKEY": holodex_apiKey
+                "X-APIKEY": storedApiKey
             }
         })
             .then((response) => response.json())

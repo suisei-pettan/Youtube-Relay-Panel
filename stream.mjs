@@ -13,7 +13,7 @@ const httpServer = createServer({
 const io = new Server(httpServer, {
     /* options */
     cors: {
-        origin: "https://btiowaifu.github.io",
+        origin: "https://suisei-pettan.github.io/",
     },
 });
 
