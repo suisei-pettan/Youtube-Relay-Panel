@@ -74,9 +74,10 @@
 <script>
     function fetchLiveStreams() {
         const apiKey = "https://holodex.net/api/v2/live?org=Hololive&status=live";
+        const holodex_apiKey = prompt("请输入 Holodex API 密钥:");
         fetch(apiKey, {
             headers: {
-                "X-APIKEY": "114514"
+                "X-APIKEY": holodex_apiKey
             }
         })
             .then((response) => response.json())
