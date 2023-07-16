@@ -1,106 +1,136 @@
-import { readFileSync, writeFileSync } from "fs";
-import { createServer } from "https";
-import { Server } from "socket.io";
-import { exec, spawn,fork } from "child_process";
+import {readFileSync, writeFileSync} from "fs";
+import {createServer} from "https";
+import {Server} from "socket.io";
+import {exec, spawn, fork} from "child_process";
 
-global.pid=[];
+global.pid = [];
 
 
 const httpServer = createServer({
-  key: readFileSync("/www/server/panel/ssl/privateKey.pem"),
-  cert: readFileSync("/www/server/panel/ssl/certificate.pem"),
+    key: readFileSync("/www/server/panel/ssl/privateKey.pem"),
+    cert: readFileSync("/www/server/panel/ssl/certificate.pem"),
 });
 
 const io = new Server(httpServer, {
-  /* options */
-  cors: {
-    origin: "https://btiowaifu.github.io",
-  },
+    /* options */
+    cors: {
+        origin: "https://btiowaifu.github.io",
+    },
 });
 
 let pidList = [];
 
 io.on("connection", (socket) => {
-  global.urls=[];
-  socket.on("disconnect", () => {
-    console.log("User disconnected");
-  });
-  socket.on("danmaku", (arg) => {
-    var pattern = /.*(吹雪|笨蛋).*/;
-    var danma = JSON.parse(arg);
-    if (pattern.test(danma.text)) {
-      console.log(pattern.test(danma.text));
-    } else {
-      console.log(danma.text);
-      var channel = danma.ch;
-      io.emit("danmaku" + channel, arg);
-    }
-  });
-  socket.on("pushurl", (data) => {
-    if (!data.url.includes("you")) {
-      socket.emit("not-standard-link", "请使用YouTube分享链接");
-    } else {
-      if (global.urls.includes(data.url)) {
-        socket.emit("broadcasted", "此直播已转播");
-      } else {
-        global.urls.push(data.url);
-        const args = [data.url, data.stream_link];
-
-const process = spawn('python3', ['/www/streambackend.py', ...args],{ detached: true });
-
-
-        // 获取进程的 PID
-        const pid = process.pid;
-        console.log(`The pid of the process is ${pid}.`);
-
-        // 将进程 PID 添加到 global.pid 数组的第一列和第二列
-        global.pid.push([data.stream_link, pid]);
-
-        // 当进程退出时更新 global.pid 数组，删除原来存在的 PID 行
-        process.on('exit', (code) => {
-          const index = global.pid.findIndex((item) => item[0] === data.stream_link);
-          if (index !== -1) {
-            global.pid.splice(index, 1);
-          }
-        });
-      }
-    }
-  });
-
-socket.on("close-stream", (value) => {
-  // 查找在 global.pid 数组中与 value.stream_link 相同的行，并获得该行在数组中的索引
-  const index = global.pid.findIndex((item) => item[0] === value.stream_link);
-
-  if (index !== -1) {
-    // 从 global.pid 数组中获取当前行的 pid，并使用 kill -TERM 命令杀死进程
-    const pidToKill = global.pid[index][1];
-    exec(`kill -kill -- -${pidToKill}`, (error, stdout, stderr) => {
-      if (error) {
-        console.log(`kill process error: ${error.message}`);
-        return;
-      }
-      if (stderr) {
-        console.log(`kill process stderr: ${stderr}`);
-        if (urlIndex !== -1) {
-    // 从 global.urls 数组中删除当前项
-    global.urls.splice(urlIndex, 1);
-    console.log(`item with url ${value.url} removed from urls`);
-  }
-        return;
-      }
-      console.log(`process ${pidToKill} killed`);
+    global.urls = [];
+    socket.on("disconnect", () => {
+        console.log("User disconnected");
     });
+    socket.on("danmaku", (arg) => {
+        var pattern = /.*(吹雪|笨蛋).*/;
+        var danma = JSON.parse(arg);
+        if (pattern.test(danma.text)) {
+            console.log(pattern.test(danma.text));
+        } else {
+            console.log(danma.text);
+            var channel = danma.ch;
+            io.emit("danmaku" + channel, arg);
+        }
+    });
+    socket.on('pushurl', (data) => {
+        const {url, stream_link} = data;
 
-    // 从 global.pid 数组中删除当前行
-    global.pid.splice(index, 1);
-    console.log(`row with stream_link ${value.stream_link} removed from pid`);
-  }
+        // 检查txt文件内是否存在与url一致的URL
+        const checkUrlExists = (url) => {
+            return new Promise((resolve, reject) => {
+                const fileStream = fs.createReadStream('urls.txt');
+                const rl = readline.createInterface({
+                    input: fileStream,
+                    crlfDelay: Infinity
+                });
 
-  // 查找在 global.urls 数组中与 value.url 相同的项，并获得该项在数组中的索引
-  const urlIndex = global.urls.findIndex((url) => url === value.url);
+                rl.on('line', (line) => {
+                    if (line === url) {
+                        rl.close();
+                        resolve(true);
+                    }
+                });
+
+                rl.on('close', () => {
+                    resolve(false);
+                });
+
+                rl.on('error', (err) => {
+                    reject(err);
+                });
+            });
+        };
+
+        // 执行Python脚本并传递参数
+        const executePythonScript = (url, stream_link) => {
+            const pythonProcess = spawn('python3', [streambackendPath, url, stream_link]);
+
+            pythonProcess.stdout.on('data', (data) => {
+                // 处理脚本输出
+                console.log(`stdout: ${data}`);
+            });
+
+            pythonProcess.stderr.on('data', (data) => {
+                // 处理脚本错误输出
+                console.error(`stderr: ${data}`);
+            });
+
+            pythonProcess.on('close', (code) => {
+                // 脚本执行完毕的回调函数
+                console.log(`子进程退出，退出码 ${code}`);
+
+                // 将url追加到txt文件中
+                fs.appendFile('urls.txt', url + '\n', (err) => {
+                    if (err) {
+                        console.error('无法将URL写入文件:', err);
+                    } else {
+                        console.log('URL已追加到文件.');
+
+                        // 向客户端发送"已推流"事件
+                        socket.emit('streaming', '已推流');
+                    }
+                });
+            });
+        };
+
+        // 检查txt文件内是否存在与url一致的URL
+        checkUrlExists(url)
+            .then((exists) => {
+                if (exists) {
+                    // 向客户端发送"已推流"事件
+                    socket.emit('streaming', '已推流');
+                    console.log('URL已推流');
+                } else {
+                    // 执行Python脚本并传递参数
+                    executePythonScript(url, stream_link);
+                }
+            })
+            .catch((error) => {
+                console.error('检查URL时出错:', error);
+            });
+    });
+    socket.on('close-stream', (url) => {
+        // 执行stream_stop_event_sender.py脚本并传递参数
+        const pythonProcess = spawn('python3', [streamStopEventSenderPath, url]);
+
+        pythonProcess.stdout.on('data', (data) => {
+            // 处理脚本输出
+            console.log(`stdout: ${data}`);
+        });
+
+        pythonProcess.stderr.on('data', (data) => {
+            // 处理脚本错误输出
+            console.error(`stderr: ${data}`);
+        });
+
+        pythonProcess.on('close', (code) => {
+            // 脚本执行完毕的回调函数
+            console.log(`子进程退出，退出码 ${code}`);
+        });
+    });
 });
-
-
-});
-
 httpServer.listen(2083);

@@ -76,7 +76,7 @@
         const apiKey = "https://holodex.net/api/v2/live?org=Hololive&status=live";
         fetch(apiKey, {
             headers: {
-                "X-APIKEY": ""
+                "X-APIKEY": "114514"
             }
         })
             .then((response) => response.json())
@@ -140,6 +140,10 @@
         });
         socket.on("broadcasted", (data) => {
             alert(data);
+        });
+        socket.on('streaming', (data) => {
+            // 显示提示框或执行其他操作
+            alert('已推流');
         });
     }
 
