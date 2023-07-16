@@ -29,8 +29,8 @@ def download_and_stream(url, stream_link):
         cnx = mysql.connector.connect(user='relay', password='123', database='relay', charset='utf8mb4')
         cursor = cnx.cursor()
 
-        insert_query = "INSERT INTO streams (python_pid, ffmpeg_pid, url) VALUES (%s, %s, %s)"
-        insert_values = (python_pid, ffmpeg_pid, url)
+        insert_query = "INSERT INTO streams (python_pid, ffmpeg_pid, url, stream_link) VALUES (%s, %s, %s, %s)"
+        insert_values = (python_pid, ffmpeg_pid, url, stream_link)
         cursor.execute(insert_query, insert_values)
 
         cnx.commit()
@@ -64,8 +64,8 @@ def download_and_stream(url, stream_link):
         def listen_socket():
             while True:
                 client_socket, address = server_socket.accept()
-                data = client_socket.recv(1024).decode('utf-8')
-                if data.strip() == url:
+                received_stream_link = client_socket.recv(1024).decode('utf-8')
+                if received_stream_link.strip() == stream_link:
                     # 停止 FFmpeg 进程
                     ffmpeg_process.terminate()
                     break
